@@ -10,4 +10,4 @@ NYCpdf.rmd, an r markdown file
 
 NYCpdf.pdf, the pdf output of the r markdown file noted above
 
-In addition,this repository houses a download of the csv version of the original dataset from Kaggle.com.
+In addition,this repository houses a download of the csv version of the original dataset from Kaggle.com, nyc-rolling-sales.csv.
