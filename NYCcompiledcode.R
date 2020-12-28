@@ -272,7 +272,7 @@ nyc<-nyc%>%select(-BLOCK)
 #remove SALE PX as variable - redundant due to introduction of SALE LOG vector
 nyc<-nyc %>%select(-SALE_PX)
 
-#log transform and standardize num variables with a viable mean (vs. ordinal)
+#log transform and standardize num variables with a viable mean (vs. categorical)
 nyc$LAND_SF<-log(nyc$LAND_SF)
 nyc$GRSS_SF<-log(nyc$GRSS_SF)
 nyc$SUM_UNIT<-log(nyc$SUM_UNIT)
