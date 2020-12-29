@@ -195,8 +195,8 @@ duplicated lines in the dataset, so will remove those, the EASEMENT column noted
 With completion of the above, our revised dataset is now **`r revrows` rows** and **`r revcolumns` columns** in dimension.
 
 ##### Data Visualization
-We start with a review of the distribution of our Sale Prices (SALE_PX). We have a pretty wide range of Sale Prices, starting at $1 and maxing out at $2.21 Billion, so we will
-first review this via a log 10 transformation of the plot.
+We start with a review of the distribution of our Sale Prices (SALE_PX). We have a pretty wide range of Sale Prices, starting at $1 and maxing out at $2.21 Billion, so we
+will first review this via a log 10 transformation of the plot.
   
 ```{r initial sales distribution, echo=F, fig.width=4.5,fig.height=3.75}
 #Distribution of Sale Price
@@ -526,8 +526,8 @@ BLDG_CL_SOLDD4, BLDG_CL_CATEGORY10.COOPS...ELEVATOR APARTMENTS, SUM_UNIT, and BO
 #### randomForest Model
 
 
-Random Forest as an algorithm gives us the ability to have R process many alternative combinations of variables in order to determine the combination that delivers the lowest
-RMSE. This algorithm is more robust than the single decision tree rpart algorithm we just fit.  
+Random Forest as an algorithm gives us the ability to have R process many alternative combinations of variables in order to determine the combination that delivers the
+lowest RMSE. This algorithm is more robust than the single decision tree rpart algorithm we just fit.  
 
 For this particular model, and in the interest of processing time, we chose 64 trees (_informed by How Many Trees in a Random Forest? Authors
 Thais Mayumi Oshiro,Pedro Santoro Perez,José Augusto Baranauskas_), and tuned the mtry, the number of variables randomly sampled in each tree, which produced a bestTune
