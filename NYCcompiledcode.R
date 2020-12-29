@@ -2,9 +2,9 @@
 #Compiled R Code NYC Property Sales - Harvard edX Data Science Capstone
 #######################################################################
 
-###########################
-# Download File from Kaggle
-###########################
+##########################################################
+# Install Packages Libraries and Download File from Kaggle
+##########################################################
 
 # Note: this process could take a couple of minutes
 
@@ -30,7 +30,6 @@ library(matrixStats)
 
 #New York City Property Sales Sept 2016 Sept 2017 Machine Learning Repository
 #https://www.kaggle.com/new-york-city/nyc-property-sales
-
 
 #Necessary to download Kaggle to GitHub, then download GitHub file to RStudio
 download.file("https://raw.githubusercontent.com/MLamp20/NYCProps/main/nyc-rolling-sales.csv",destfile="./Projects/data/raw/nyc_rolling_sales.csv")
@@ -92,7 +91,8 @@ print(bcc_naz,n=Inf)
 
 #calculate avg grss sf by bldg cl category
 bcc_ntna<-nyc %>% filter(!is.na(GRSS_SF))%>%filter(!GRSS_SF<1)%>% group_by(BLDG_CL_CATEGORY)%>%
-  summarize(n=n(),avg_SL_K=round(mean(SALE_PX)/1000),med_SL_K=round(median(SALE_PX)/1000),avg_GRSF=round(mean(GRSS_SF)),med_GRSF=round(median(GRSS_SF)),avg_pxGSF=round((avg_SL_K*1000)/avg_GRSF),med_pxGSF=round((med_SL_K*1000)/med_GRSF))
+  summarize(n=n(),avg_SL_K=round(mean(SALE_PX)/1000),med_SL_K=round(median(SALE_PX)/1000),avg_GRSF=round(mean(GRSS_SF)),med_GRSF=round(median(GRSS_SF)),
+            avg_pxGSF=round((avg_SL_K*1000)/avg_GRSF),med_pxGSF=round((med_SL_K*1000)/med_GRSF))
 print(bcc_ntna,n=Inf)
 
 #replace BUILT with AGE, add SUM UNIT remove easement x1 
@@ -177,7 +177,8 @@ nyc%>%ggplot(aes(GRSS_SF,SALE_PX))+geom_point(alpha=0.3,color="blue")
 
 #boxplot visualizations vs SALE LOG
 #building class category plot ordered by mean price
-nyc%>%mutate(BLDG_CL_CATEGORY=reorder(BLDG_CL_CATEGORY,SALE_LOG,FUN=mean)) %>%ggplot(aes(BLDG_CL_CATEGORY,SALE_LOG))+geom_boxplot()+theme(axis.text.x = element_text(angle=90,hjust=1))
+nyc%>%mutate(BLDG_CL_CATEGORY=reorder(BLDG_CL_CATEGORY,SALE_LOG,FUN=mean)) %>%ggplot(aes(BLDG_CL_CATEGORY,SALE_LOG))+geom_boxplot()+
+  theme(axis.text.x = element_text(angle=90,hjust=1))
 
 #plot SUM UNIT vs SALE LOG
 boxplot(SALE_LOG~SUM_UNIT,data=nyc,horizontal=TRUE)
@@ -252,7 +253,6 @@ slsf_dollars<-nyc %>% group_by(BLDG_CL_CATEGORY)%>% summarize(TTL_SLS_K=round(su
 tiernagsf<-nyc_na_grsf%>%left_join(slsf_dollars,by="BLDG_CL_CATEGORY")
 tiernagsf%>%mutate(BLDG_CL_CATEGORY=reorder(BLDG_CL_CATEGORY,avg_pxgsf), FUN=avg_pxgsf) %>%ggplot(aes(avg_pxgsf,BLDG_CL_CATEGORY))+ geom_point(aes(col=tier)) 
 
-
 #review categories with highest sale per gsf
 most_slsf_cat<-dset_c%>%arrange(desc(avg_pxgsf))%>%head(10)
 cat<-dset_c_trim %>% arrange(desc(avg_pxgsf))%>%head(10)
@@ -263,7 +263,7 @@ slsf_dollars_top<-slsf_dollars%>%arrange(desc(TTL_SLS_K))%>%head(10)
 slsf_dollars_top
 sum(slsf_dollars_top$TTL_SLS_K*1000)/sum(nyc$SALE_PX)
 
-#review categoris by lowest dollar sales
+#review categories by lowest dollar sales
 slsf_dollars_bottom<-slsf_dollars%>%arrange(TTL_SLS_K)%>%head(10)
 slsf_dollars_bottom
 
@@ -317,7 +317,6 @@ corsub_for_hot_adj$term
 nyc_pre_split<-newdata%>%select_if(names(.)%in% corsub_for_hot_adj$term)
 dim(nyc_pre_split)
 
-
 ############################################
 # Partition Data Training vs Testing Subsets
 ############################################
@@ -332,10 +331,9 @@ test<-nyc_pre_split[test_index,]
 # Model Fitting
 ################
 
-
 #linear regression model
 
-#train model on training set
+#train linear model on training set
 model<-lm(SALE_LOG ~ ., data = train)
 
 #show intercept and value estimates per variables on train set
@@ -344,20 +342,19 @@ print(tidy(model),n=Inf)
 #variable importance linear model
 as.data.frame(varImp(model))%>%arrange(desc(Overall))
 
-#review RMSE on train
+#review RMSE on train linear model
 rmse_train_lm<-summary(model)$sigma
 rmse_train_lm
 
-#predict values on test set
+#predict values on test set linear model
 y_hat_lm<-predict.lm(model,newdata = test)
 
-#evaluate rmse predictions for test set vs actuals
+#evaluate rmse predictions for test set vs actuals linear model
 rmse_lm<-RMSE(y_hat_lm,test$SALE_LOG)
 
 #place RMSE results on test set in data frame
 rmse_result <- data_frame(Method = "Linear Regression Predictor", RMSEtrain = rmse_train_lm, RMSEtest = rmse_lm )
 rmse_result%>%knitr::kable()
-
 
 ##rpart model
 
@@ -376,14 +373,14 @@ train_rpart$finalModel
 #variable importance rpart model
 varImp(train_rpart)
 
-#review RMSE on training set
+#review RMSE on training set rpart model
 rmse_train_rpart<-train_rpart$results$RMSE[which.min(train_rpart$results$RMSE)]
 rmse_train_rpart
 
-#predict values on test set
+#predict values on test set rpart model
 y_hat_rpart <- predict(train_rpart, test, type = "raw")
 
-#evaluate rmse predictions for test set vs actuals
+#evaluate rmse predictions for test set vs actuals rpart model
 rmse_rpart<-RMSE(y_hat_rpart,test$SALE_LOG)
 
 #add RMSE results on test set for this model to existing data frame
@@ -407,17 +404,17 @@ fit_rf$bestTune
 #review model
 fit_rf
 
-#review the importance of the top 20 variables in the buildout of the training model
+#review the importance of the top 20 variables in the buildout of the rf training model
 varImp(fit_rf)
 
-#review RMSE on training set
+#review RMSE on training set rf model
 rmse_train_rf<-fit_rf$results$RMSE[which.min(fit_rf$results$RMSE)]
 rmse_train_rf
 
-#predict values on test set
+#predict values on test set rf model
 y_hat_rf<-predict(fit_rf, test, type = "raw")
 
-#evaluate rmse predictions for test set vs actuals
+#evaluate rmse predictions for test set vs actuals rf model
 rmse_rf<-RMSE(y_hat_rf,test$SALE_LOG)
 
 #add RMSE results on test set for this model to existing data frame
