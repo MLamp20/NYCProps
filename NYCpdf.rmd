@@ -1,7 +1,7 @@
 ---
 title: "NYC Property Sales - Harvard EdX Data Science Capstone"
 author: "Mary Lampmann"
-date: "12/28/2020"
+date: "12/29/2020"
 output: pdf_document
 ---
 
@@ -10,7 +10,8 @@ knitr::opts_chunk$set(echo = TRUE,dev ="pdf",comment=NA )
 ```
 
 ### **Introduction**
-The City of New York has made a dataset of all Property Sales transactions in the city for the twelve month period from September 2016 to September 2017 available for data analysis (Source:Kaggle.com).
+The City of New York has made a dataset of all Property Sales transactions in the city for the twelve month period from September 2016 to September 2017 available
+for data analysis (Source:Kaggle.com).
 
 #Kaggle webpage
 * [NYC Property Sales]"https://www.kaggle.com/new-york-city/nyc-property-sales"
@@ -18,7 +19,8 @@ The City of New York has made a dataset of all Property Sales transactions in th
 #Github link for download of Kaggle csv file
 "https://raw.githubusercontent.com/MLamp20/NYCProps/main/nyc-rolling-sales.csv"
 
-This report documents the application of machine learning (ML) techniques to the variables in that dataset in order to predict the Sale Price of each property as accurately as possible.  This report will document my analysis and present my findings with supporting statistics and figures. 
+This report documents the application of machine learning (ML) techniques to the variables in that dataset in order to predict the Sale Price of each property as accurately
+as possible.  This report will document my analysis and present my findings with supporting statistics and figures. 
 
 ```{r load packages and libraries, echo=F, message=F,warning=F }
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
@@ -39,7 +41,6 @@ library(broom)
 library(randomForest)
 library(rpart)
 library(matrixStats)
-
 ```
 ```{r load nyc for eda and rename, echo=F, message=F,warning=F}
 download.file("https://raw.githubusercontent.com/MLamp20/NYCProps/main/nyc-rolling-sales.csv",destfile="./Projects/data/raw/nyc_rolling_sales.csv")
@@ -54,10 +55,12 @@ nyc<-nyc%>% rename(BLDG_CL_CATEGORY="BUILDING CLASS CATEGORY",TAX_CL_0917="TAX C
                    LAND_SF="LAND SQUARE FEET",GRSS_SF="GROSS SQUARE FEET",BUILT="YEAR BUILT",
                    TAX_CL_SOLD="TAX CLASS AT TIME OF SALE",BLDG_CL_SOLD="BUILDING CLASS AT TIME OF SALE",
                    SALE_PX="SALE PRICE",SALE_DATE="SALE DATE",EASEMENT="EASE-MENT")
-
 ```
 
-The goal of this project is the training of multiple ML algorithms which will use inputs from a subset of the data to predict Sale Price in a separate subset of that same data, determining the algorithm that does so with the lowest residual mean squared error (RMSE).  I will be standardizing the data, both to eliminate skew in the Sale Price and to modify the dataset for use with multiple types of machine learning algorithms, so the target number for the RMSE will be the lowest RMSE below the standard deviation of 1.0.
+The goal of this project is the training of multiple ML algorithms which will use inputs from a subset of the data to predict Sale Price in a separate subset of that same
+data, determining the algorithm that does so with the lowest residual mean squared error (RMSE).  I will be standardizing the data, both to eliminate skew in the Sale
+Price and to modify the dataset for use with multiple types of machine learning algorithms, so the target number for the RMSE will be the lowest RMSE below the
+standard deviation of 1.0.
 
 #### Project Key steps
 
@@ -67,7 +70,8 @@ The goal of this project is the training of multiple ML algorithms which will us
   c. Removal or replacement of blanks, NA, and zeroes as appropriate
   d. Removal of duplicated lines
      
-2. Conduct exploratory data analysis (EDA) on the training set **nyc** for use in machine learning (ML) model development, as well as additional dataset modification based on EDA learnings, inclusive of:
+2. Conduct exploratory data analysis (EDA) on the training set **nyc** for use in machine learning (ML) model development, as well as additional dataset modification based
+on EDA learnings, inclusive of:
   a. Log transform and scale variables to remove skew identified in EDA
   b. Remove extreme outliers from dataset
   c. Conversion of variables to factors
@@ -85,7 +89,6 @@ The goal of this project is the training of multiple ML algorithms which will us
 #### **Exploratory Data Analysis**
 
 ```{r dims distinct, echo=F}
-
 rows<-dim(nyc)[[1]]
 columns<-dim(nyc)[[2]]
 n_boro<-n_distinct(nyc$BOROUGH)
@@ -96,7 +99,11 @@ n_bldgsold<-n_distinct(nyc$BLDG_CL_SOLD)
 nyc_dist<-summarize_all(nyc,n_distinct,na.rm=TRUE)
 ```
 
-New York City itself is a big place. The dataset, **nyc**, is comprised of  **`r rows`** rows and **`r columns`** columns, and includes distinct records for **`r n_boro`** boroughs (1-Manhattan, 2-Bronx, 3-Brooklyn, 4-Queens, 5-Staten Island), **`r n_hood`** neighborhoods, **`r n_blk`** blocks, **`r n_bldg_cl_cat`**  building class categories, and at the point of sale, **`r n_bldgsold`** building classes.  Additional variables in the dataset include the address, apartment number (where applicable), zip code, parcel lot number, residential, commercial and total units in the property, square footage (gross and for the land parcel lot), year built, tax class of the property, sale price, and date of sale.
+New York City itself is a big place. The dataset, **nyc**, is comprised of  **`r rows`** rows and **`r columns`** columns, and includes distinct records for **`r n_boro`**
+boroughs (1-Manhattan, 2-Bronx, 3-Brooklyn, 4-Queens, 5-Staten Island), **`r n_hood`** neighborhoods, **`r n_blk`** blocks, **`r n_bldg_cl_cat`**  building class
+categories, and at the point of sale, **`r n_bldgsold`** building classes.
+Additional variables in the dataset include the address, apartment number (where applicable), zip code, parcel lot number, residential, commercial and total units in the
+property, square footage (gross and for the land parcel lot), year built, tax class of the property, sale price, and date of sale.
 
 ```{r essential preprocessing, echo=F,warning=F,message=F}
 #count zeroes
@@ -119,7 +126,6 @@ nyc<-nyc%>%filter(!(SALE_PX<1))
 #recap percentage NA grss_sf for later plot
 nyc_na_grsf<-nyc%>%group_by(BLDG_CL_CATEGORY)%>%summarise(na_pct=round(sum(is.na(GRSS_SF))/n(),2))%>%
   mutate(tier=ifelse(na_pct>.75,1,ifelse(na_pct>.50,2,ifelse(na_pct>.25,3,ifelse(na_pct>0,4,5)))))
-
 
 #Add AGE SUM UNIT remove easement x1
 nyc<-nyc%>%mutate(AGE=2017-BUILT,SUM_UNIT=RESID_UNITS + COMM_UNITS)%>%select(-c(X1,EASEMENT,BUILT))
@@ -153,36 +159,44 @@ indexd<-which(duplicated(nyc))
 nyc<-nyc[-indexd,]
 revrows<-dim(nyc)[[1]]
 revcolumns<-dim(nyc)[[2]]
-
 ```
 
 ##### Preprocessing
 
-The first step in preprocessing is simplification of 16 of the `r columns` variable names for ease of reading, both in the removal of spaces and abbreviation of certain terms.
+The first step in preprocessing is simplification of 16 of the `r columns` variable names for ease of reading, both in the removal of spaces and abbreviation of certain
+terms.
 
-Evaluation of the distinct values for each variable is the next step, which immediately identifies a column **EASEMENT** with no values.  We will extract this from the dataset in a future step.
+Evaluation of the distinct values for each variable is the next step, which immediately identifies a column **EASEMENT** with no values.  We will extract this from the
+dataset in a future step.
 ```{r distinct ordered, echo=F}
 sort(nyc_dist,decreasing = TRUE)
 ```
 
-Next up:  a review of the percentage of zero values in each vector.  Biggest issues exist in the UNITS variables (a notable 94% of the commercial units (COMM_UNITS)), the SF variables (gross square foot (GRSS_SF) and land square foot (LAND_SF)), and in Sale Price (SALE_PX).  We will have to remove records with zero Sale Price, but will look to replace other zero values with mean values in future steps. 
+Next up:  a review of the percentage of zero values in each vector.  Biggest issues exist in the UNITS variables (a notable 94% of the commercial units (COMM_UNITS)), the
+SF variables (gross square foot (GRSS_SF) and land square foot (LAND_SF)), and in Sale Price (SALE_PX).  We will have to remove records with zero Sale Price, but will
+look to replace other zero values with mean values in future steps. 
 
 ```{r zero percentage, echo=F}
 sort(reszero[!reszero==0],decreasing=TRUE)
 ```
-Potentially more impactful to our dataset than zeroes are the percentage of NA values.  Surprisingly, a review of the NA values identifies only 4 vectors with NA values.  We see that 77% of Apartment Number vector (**APT_NO**) values are NAs, suggesting minimal value in using that variable in our model building.  We will look to replace NAs in "at present"(**0917**) values of the tax class and building classes of the properties with the values of those classes at the point of sale.
+Potentially more impactful to our dataset than zeroes are the percentage of NA values.  Surprisingly, a review of the NA values identifies only 4 vectors with NA values.
+We see that 77% of Apartment Number vector (**APT_NO**) values are NAs, suggesting minimal value in using that variable in our model building.  We will look to replace
+NAs in "at present"(**0917**) values of the tax class and building classes of the properties with the values of those classes at the point of sale.
 
 ```{r is.na , echo=F}
 sort(nyc_na[(nyc_na>0)], decreasing = TRUE)
 ```
-The original dataset consisted of character, numeric, and logical vectors.  Next step in our preprocessing is conversion of character vectors that represent numbers to numeric vectors, or, in the case of date of sale (SALE_DATE), to a time vector.  
+The original dataset consisted of character, numeric, and logical vectors.  Next step in our preprocessing is conversion of character vectors that represent numbers to
+numeric vectors, or, in the case of date of sale (SALE_DATE), to a time vector.  
 
-Once we have completed that step, we conduct our replacements of zero and NA values, and remove records where the sale price is NA, blank, or zero.  We have also identified duplicated lines in the dataset, so will remove those, the EASEMENT column noted above, and then begin some data visualization.
+Once we have completed that step, we conduct our replacements of zero and NA values, and remove records where the sale price is NA, blank, or zero.  We have also identified
+duplicated lines in the dataset, so will remove those, the EASEMENT column noted above, and then begin some data visualization.
 
 With completion of the above, our revised dataset is now **`r revrows` rows** and **`r revcolumns` columns** in dimension.
 
 ##### Data Visualization
-We start with a review of the distribution of our Sale Prices (SALE_PX). We have a pretty wide range of Sale Prices, starting at $1 and maxing out at $2.21 Billion, so we will first review this via a log 10 transformation of the plot.
+We start with a review of the distribution of our Sale Prices (SALE_PX). We have a pretty wide range of Sale Prices, starting at $1 and maxing out at $2.21 Billion, so we will
+first review this via a log 10 transformation of the plot.
   
 ```{r initial sales distribution, echo=F, fig.width=4.5,fig.height=3.75}
 #Distribution of Sale Price
@@ -190,7 +204,8 @@ slpxdistr<-nyc%>%ggplot(aes(SALE_PX))+geom_histogram(bins=30,color="black")+ sca
 slpxdistr
 ```
 
-The data is clearly skewed with a long tail.  Next step: log transform and then standardize the sale price.  Once complete, I elected to remove the records that have an absolute scaled Sale Log value of >4, which leaves us with the following plot and the variable SALE LOG, which represents the log transformed and scaled Sale Prices:
+The data is clearly skewed with a long tail.  Next step: log transform and then standardize the sale price.  Once complete, I elected to remove the records that have an
+absolute scaled Sale Log value of >4, which leaves us with the following plot and the variable SALE LOG, which represents the log transformed and scaled Sale Prices:
 
 ```{r log transform scale SALE PX, echo= F, fig.width=4.5,fig.height=3.75}
 #Data has long tail, do log conversion to remove skew
@@ -204,10 +219,10 @@ nyc<-nyc%>%mutate_at("SALE_LOG",~ scale(.) %>% as.vector)
 nyc<-nyc%>%filter(!abs(SALE_LOG)>4)
 nyc_wo_outlier<-nyc%>%ggplot(aes(SALE_LOG))+geom_histogram(bins=30,color="black")+ggtitle("STD Sale Price Distribution EXCL Outliers")
 nyc_wo_outlier
-
 ```
 
-Square Footage is a metric that is often discussed in the context of sale prices, here's the comparison of the gross square footage (GRSS_SF) of our data set with the Sale Price:
+Square Footage is a metric that is often discussed in the context of sale prices, here's the comparison of the gross square footage (GRSS_SF) of our data set with the Sale
+Price:
 
 ```{r gross sf sale px plot, echo=F,fig.width=3.75,fig.height=2.5}
 #plot variables vs SALE PX
@@ -223,7 +238,8 @@ Evaluating sales prices by category, we see Condo Warehouses/Factory with the lo
 
 ```{r boxplot bldg cat, message=F, echo=F,fig.width=7,fig.height=5}
 #boxplot visualization
-nyc%>%mutate(BLDG_CL_CATEGORY=reorder(BLDG_CL_CATEGORY,SALE_LOG,FUN=mean)) %>%ggplot(aes(BLDG_CL_CATEGORY,SALE_LOG))+geom_boxplot()+theme(axis.text.x = element_text(angle=90,hjust=1))
+nyc%>%mutate(BLDG_CL_CATEGORY=reorder(BLDG_CL_CATEGORY,SALE_LOG,FUN=mean)) %>%ggplot(aes(BLDG_CL_CATEGORY,SALE_LOG))+geom_boxplot()+
+  theme(axis.text.x = element_text(angle=90,hjust=1))
 ```
 
 Although there appears to be some linearity in the 18-50 SUM UNIT counts, the sale price averages for the sum of units are notably variable in the 50-100 unit range.
@@ -232,7 +248,8 @@ Although there appears to be some linearity in the 18-50 SUM UNIT counts, the sa
 boxplot(SALE_LOG~SUM_UNIT,data=nyc,horizontal=TRUE)
 ```
 
-In sale price by Borough, we see that Borough 1, Manhattan has both the highest average price and the largest interquartile range (IQR).  Borough 2, the Bronx has the lowest average, and Borough 5, Staten Island has the smallest interquartile range.
+In sale price by Borough, we see that Borough 1, Manhattan has both the highest average price and the largest interquartile range (IQR).  Borough 2, the Bronx has the
+lowest average, and Borough 5, Staten Island has the smallest interquartile range.
 
 ```{r boxplot BORO, echo=F,fig.height=3.5,fig.width=5.5}
 boxplot(SALE_LOG~BOROUGH,data=nyc,horizontal=TRUE)
@@ -240,7 +257,9 @@ boxplot(SALE_LOG~BOROUGH,data=nyc,horizontal=TRUE)
 
 ##### Time Effect on Sale Price by Borough
 
-The 5 boroughs were faceted for analysis as to whether time played a significant role in Sale Price. Although there was some time effect in Borough #1, Manhattan, most notable in the October-January time period, the other 4 boroughs average sale prices were remarkably stable across the weeks of the dataset. Considering this, time will not be incorporated into the ML model.
+The 5 boroughs were faceted for analysis as to whether time played a significant role in Sale Price. Although there was some time effect in Borough #1, Manhattan, most
+notable in the October-January time period, the other 4 boroughs average sale prices were remarkably stable across the weeks of the dataset. Considering this, time
+will not be incorporated into the ML model.
 
 ```{r sales price by week boro,echo= F,message=F,warning=F}
 #review sales price by borough by time
@@ -249,11 +268,9 @@ px_time<-nyc%>%group_by(SL_WEEK,BOROUGH)%>%summarize(avg_px_wk=mean(SALE_PX))%>%
 px_time
 #remove SL_WEEK as negligible impact in 4 of 5 boroughs
 nyc<-nyc%>%select(-c(SL_WEEK))
-
 ```
 
 ```{r correlation evaluation, echo=F,eval=F}
-
 cor(nyc$SALE_PX,nyc$BOROUGH)
 cor(nyc$SALE_PX,nyc$BLOCK)
 cor(nyc$SALE_PX,nyc$LOT)
@@ -280,7 +297,6 @@ cor(nyc$GRSS_SF,nyc$LAND_SF)
 
 cor(nyc$LAND_SF,nyc$RESID_UNITS)
 cor(nyc$LAND_SF,nyc$SUM_UNIT)
-
 ```
   
 \ 
@@ -290,25 +306,27 @@ nyc<-nyc%>%select(-c(APT_NO,RESID_UNITS,COMM_UNITS,TTL_UNITS,AGE,ZIP,LOT))
 
 #remove chr columns too granular or post sale
 nyc<-nyc%>%select(-c(ADDRESS,TAX_CL_0917,BLDG_CL_0917))
-
 ```
 \  
-We've reviewed visualizations on sale price vs. some of the variables, but now let's evaluate the count of sales transactions (*n*), neighborhoods (*nbrhd*), blocks (*blk*), building class categories (*categ*), and average sale price per gross square footage (*avg_pxgsf*). Note that *avg_px_K* is an expresssion of the Sale Price in Thousands.
+We've reviewed visualizations on sale price vs. some of the variables, but now let's evaluate the count of sales transactions (*n*), neighborhoods (*nbrhd*), blocks (*blk*),
+building class categories (*categ*), and average sale price per gross square footage (*avg_pxgsf*). Note that *avg_px_K* is an expresssion of the Sale Price in Thousands.
 \  
 ```{r table by boro,echo= F,message=F,warning=F}
 #table grouped by borough
 dset_b<-nyc %>% group_by(BOROUGH)%>%summarize(n=n(),nbrhd=n_distinct(NEIGHBORHOOD),categ=n_distinct(BLDG_CL_CATEGORY),
                                               blk=n_distinct(BLOCK),avg_px_K=round(mean(SALE_PX)/1000),avg_pxgsf=round(avg_px_K*1000/mean(GRSS_SF)))
 as.data.frame(dset_b)
-
 ```
 
-The greatest number of sales transactions came from Boroughs 4,3, and 1.  The number of transactions in Borough 4 and 3 are the largest, but both Boroughs rank at the top in number of blocks, and theoretically, have the largest inventory of properties.  Borough #1, Manhattan, had the highest average price per gross square footage of property sold at $1332.
+The greatest number of sales transactions came from Boroughs 4,3, and 1.  The number of transactions in Borough 4 and 3 are the largest, but both Boroughs rank at the top
+in number of blocks, and theoretically, have the largest inventory of properties.  Borough #1, Manhattan, had the highest average price per gross square footage of property
+sold at $1332.
 
 
 ##### Building Class Categories
 
-Slicing the information by building class category, we see that the top 10 categories by number of transactions (*n*) are comprised of family dwellings, apartments, and condos. These categories represent 92% of the transactions in our entire dataset.  The categories in lines 1-8 are present in each of the 5 boroughs.
+Slicing the information by building class category, we see that the top 10 categories by number of transactions (*n*) are comprised of family dwellings, apartments, and
+condos. These categories represent 92% of the transactions in our entire dataset.  The categories in lines 1-8 are present in each of the 5 boroughs.
 
 
 
@@ -321,32 +339,33 @@ dset_c<-nyc %>% group_by(BLDG_CL_CATEGORY)%>%summarize(n=n(),boro=n_distinct(BOR
 dset_c_trim<- nyc %>% group_by(BLDG_CL_CATEGORY)%>%summarize(n=n(),avg_px_K=round((mean(SALE_PX)/1000)),
                                                              avg_pxgsf=round(avg_px_K*1000/mean(GRSS_SF)))
 
-
 #largest n transactions
 most_active_cat<-dset_c%>%arrange(desc(n))%>%head(10)
 as.data.frame(most_active_cat)
 top10pcttrans<-sum(most_active_cat$n)/nrow(nyc)
-
 ```
 
-We do see some notable swings in average sale price per square foot here, but in further analysis, note that most of the condo categories had large percentages of NAs for the gross square footage that we use in this calculation, and it is likely that in using the average SF for all categories, our assigned values are too low for the condo categories specifically.
+We do see some notable swings in average sale price per square foot here, but in further analysis, note that most of the condo categories had large percentages of NAs for
+the gross square footage that we use in this calculation, and it is likely that in using the average SF for all categories, our assigned values are too low for the condo
+categories specifically.
 
 
-The categories have been assigned tiers corresponding to the percentage of GRSS_SF records that were NA, with tier 1 representing 75+% NA, tier 2 50-74%, tier 3 25-49%, tier 4 1-24%, and tier 5 with no NA in GRSS_SF.
+The categories have been assigned tiers corresponding to the percentage of GRSS_SF records that were NA, with tier 1 representing 75+% NA, tier 2 50-74%, tier 3 25-49%,
+tier 4 1-24%, and tier 5 with no NA in GRSS_SF.
 
 
 ```{r na build pct tier, echo= F, warning=F, message=F }
-
 slsf_dollars<-nyc %>% group_by(BLDG_CL_CATEGORY)%>% summarize(TTL_SLS_K=round(sum(SALE_PX)/1000),avg_pxgsf=round(mean(SALE_PX)/mean(GRSS_SF)))
 
 tiernagsf<-nyc_na_grsf%>%left_join(slsf_dollars,by="BLDG_CL_CATEGORY")
 tiernagsf%>%mutate(BLDG_CL_CATEGORY=reorder(BLDG_CL_CATEGORY,avg_pxgsf), FUN=avg_pxgsf) %>%ggplot(aes(avg_pxgsf,BLDG_CL_CATEGORY))+ geom_point(aes(col=tier)) 
 
-
 ```
 
 
-If we rework our sort and examine the highest average price per gross SF (avg_pxgsf), we clearly see that those same condos where we have replaced 50%+ of GRSS_SF have extremely high avg_pxgsf averages. In a future iteration of this analysis, we may want to replace the average square footage assignments we have made for NAs to the average for each specific building class category.
+If we rework our sort and examine the highest average price per gross SF (avg_pxgsf), we clearly see that those same condos where we have replaced 50%+ of GRSS_SF have
+extremely high avg_pxgsf averages. In a future iteration of this analysis, we may want to replace the average square footage assignments we have made for NAs to
+the average for each specific building class category.
   
 \ 
 ```{r highest avgpxsf, echo= F, warning=F, message=F }
@@ -355,19 +374,17 @@ most_slsf_cat<-dset_c%>%left_join(nyc_na_grsf,by="BLDG_CL_CATEGORY") %>% arrange
 cat<-dset_c_trim %>% arrange(desc(avg_pxgsf))%>%head(10)
 cat<-as.data.frame(cat)
 cat %>% left_join(nyc_na_grsf,by="BLDG_CL_CATEGORY")%>%select(-c(avg_px_K))
-
 ```
 
 Resorting the categories by total US dollars sold,  the top 10 categories here represent 
-almost 81% of the total dollar sales in our dataset.  The distortion on the average price per square foot as a result of the assigned GRSS_SF value for condo categories continues to be notable on this chart.
+almost 81% of the total dollar sales in our dataset.  The distortion on the average price per square foot as a result of the assigned GRSS_SF value for condo categories
+continues to be notable on this chart.
 
 ```{r top dollar categories, echo= F,warning=F, message=F,fig.width=6,fig.height=4}
 #recap top dollar categories
-
 slsf_dollars_top<-slsf_dollars%>%arrange(desc(TTL_SLS_K))%>%head(10)
 as.data.frame(slsf_dollars_top)
 top10pctdollars<-sum(slsf_dollars_top$TTL_SLS_K*1000)/sum(nyc$SALE_PX)
-
 ```
 
 Categories that make up the bottom of the list generally appear to be non "living" categories - warehouses, transportation hubs, parking, and storage.
@@ -375,10 +392,10 @@ Categories that make up the bottom of the list generally appear to be non "livin
 ```{r bottom dollars category, echo= F}
 slsf_dollars_bottom<-slsf_dollars%>%arrange(TTL_SLS_K)%>%head(10)
 as.data.frame(slsf_dollars_bottom)
- 
 ```
 
-Given our learnings thus far, we are ready to move on to log transformation and standardization of the square footage and units vectors.  One more outlier trim on gross square footage, and here is our revised plot of that vs. Sale Price, demonstrating a linear relationship: 
+Given our learnings thus far, we are ready to move on to log transformation and standardization of the square footage and units vectors.  One more outlier trim on gross
+square footage, and here is our revised plot of that vs. Sale Price, demonstrating a linear relationship: 
 
 ```{r log transform scale sf sum unit gsf plot, echo=F,fig.width=4.5,fig.height=3}
 #log transformation and standardization of numeric variables with a viable mean (vs. categorical) 
@@ -396,9 +413,11 @@ nyc%>%ggplot(aes(GRSS_SF,SALE_LOG))+geom_point(alpha=0.1,color="blue")
 
 ```
 
-Last steps before moving onto partitioning will be conversion of Borough and Tax Class Sold to factors, and then One Hot Encoding of both vectors as well as all the remaining character vectors we want to consider in our model.
+Last steps before moving onto partitioning will be conversion of Borough and Tax Class Sold to factors, and then One Hot Encoding of both vectors as well as all the
+remaining character vectors we want to consider in our model.
 
-Here are the final list of variables that we will use in our model, and their correlation with the Sale Price (logged and scaled, SALE_LOG).  Note that GRSS_SF with 19.3% correlation to SALE LOG is not the highest correlated variable.  The highest correlation instead is whether the property is in Borough.1, Manhattan.
+Here are the final list of variables that we will use in our model, and their correlation with the Sale Price (logged and scaled, SALE_LOG).  Note that GRSS_SF with 19.3%
+correlation to SALE LOG is not the highest correlated variable.  The highest correlation instead is whether the property is in Borough.1, Manhattan.
 
 ```{r one hot, echo=F, warning=F,message=F}
 #convert boro and tx cl sold to factor for use in one hot
@@ -420,7 +439,6 @@ corsub_for_hot_adj<-corsub_for_hot[c(1:22,24,26:27),]
 
 #reset nyc for final model
 nyc_pre_split<-newdata%>%select_if(names(.)%in% corsub_for_hot_adj$term)
-
 ```
 
 #### **Model Construction Methods**
@@ -429,7 +447,8 @@ nyc_pre_split<-newdata%>%select_if(names(.)%in% corsub_for_hot_adj$term)
 
 The next step in the machine learning algorithm creation was the split of the **nyc** data set into training and testing subsets, *train* and *test* respectively. 
 
-I chose to use an 80/20 split on the partitioning based on the Pareto principle, and because I wanted to leave a testing set of sufficient size for the successful testing of a variety of machine learning algorithms.
+I chose to use an 80/20 split on the partitioning based on the Pareto principle, and because I wanted to leave a testing set of sufficient size for the successful testing
+of a variety of machine learning algorithms.
 
 I used R's RMSE function to calculate the RMSE, as well as a data frame that would detail the RMSE values associated with different machine learning algorithms.
 
@@ -439,7 +458,6 @@ set.seed(1,sample.kind = "Rounding")
 test_index<-createDataPartition(y=nyc_pre_split$SALE_LOG,times=1, p=0.2, list=FALSE)
 train<-nyc_pre_split[-test_index,]
 test<-nyc_pre_split[test_index,]
-
 ```
 
 ##### **The model fittings machine learning algorithms trained:**  
@@ -449,7 +467,8 @@ Next steps were the selection of different machine learning algorithms for model
 
 #### Linear Model
 
-The plot we viewed earlier with gross square footage (GRSS_SF) and Sale Price (SALE_LOG) indicated a strong linear relationship, so the logical place to start our machine learning exercise is with simple linear regression.
+The plot we viewed earlier with gross square footage (GRSS_SF) and Sale Price (SALE_LOG) indicated a strong linear relationship, so the logical place to start our machine
+learning exercise is with simple linear regression.
 
 ```{r linear regression,warning=F,message=F}
 model<-lm(SALE_LOG ~ ., data = train)
@@ -463,18 +482,20 @@ rmse_lm<-RMSE(y_hat_lm,test$SALE_LOG)
 rmse_result <- data_frame(Method = "Linear Regression Predictor",RMSEtrain = rmse_train_lm,
                           RMSEtest = rmse_lm)
 rmse_result%>%knitr::kable()
-
 ```
 
-The linear model generated an RMSE on the training set of .464 and on the test set of .475.  The top 5 variables on this model in importance were BOROUGH.1 (Manhattan), BOROUGH.2 (Bronx), GRSS_SF, BOROUGH.5 (Staten Island), and BLDG_CL_CATEGORY47.CONDO.NON-BUSINESS.STORAGE.
+The linear model generated an RMSE on the training set of .464 and on the test set of .475.  The top 5 variables on this model in importance were BOROUGH.1 (Manhattan),
+BOROUGH.2 (Bronx), GRSS_SF, BOROUGH.5 (Staten Island), and BLDG_CL_CATEGORY47.CONDO.NON-BUSINESS.STORAGE.
 
 
 #### rpart Model
 
 
-Moving onto a more complex algorithm, we next evaluate decision trees. Although the normalization/scaling that we completed on the dataset is not required for a decision tree, that step should not have any negative impact on the *slower time to train* associated with this type of algorithm.
+Moving onto a more complex algorithm, we next evaluate decision trees. Although the normalization/scaling that we completed on the dataset is not required for a decision
+tree, that step should not have any negative impact on the *slower time to train* associated with this type of algorithm.
 
-Typically with rpart, we have the opportunity to review the decision tree that produces the lowest RMSE results.  In the case of our dataset, there are simply too many nodes and leaves to provide visual clarity, so we will instead provide the data on the points of distinction.
+Typically with rpart, we have the opportunity to review the decision tree that produces the lowest RMSE results.  In the case of our dataset, there are simply too many
+nodes and leaves to provide visual clarity, so we will instead provide the data on the points of distinction.
 
 We have used a tuning option here on the complexity parameter (cp), the minimum benefit a split must add to the tree, and arrived at the cp of .002 as the ideal.
 
@@ -498,16 +519,21 @@ rmse_result <- bind_rows(rmse_result,
 rmse_result %>% knitr::kable()
 ```
 
-The rpart model generated an RMSE on the training set of .464, and on the test set of .461.  The top 5 variables in this model, in order of importance, were GRSS_SF, BLDG_CL_SOLDD4, BLDG_CL_CATEGORY10.COOPS...ELEVATOR APARTMENTS, SUM_UNIT, and BOROUGH.2 (Bronx).
+The rpart model generated an RMSE on the training set of .464, and on the test set of .461.  The top 5 variables in this model, in order of importance, were GRSS_SF,
+BLDG_CL_SOLDD4, BLDG_CL_CATEGORY10.COOPS...ELEVATOR APARTMENTS, SUM_UNIT, and BOROUGH.2 (Bronx).
 
 
 #### randomForest Model
 
 
-Random Forest as an algorithm gives us the ability to have R process many alternative combinations of variables in order to determine the combination that delivers the lowest RMSE. This algorithm is more robust than the single decision tree rpart algorithm we just fit.  
+Random Forest as an algorithm gives us the ability to have R process many alternative combinations of variables in order to determine the combination that delivers the lowest
+RMSE. This algorithm is more robust than the single decision tree rpart algorithm we just fit.  
 
 For this particular model, and in the interest of processing time, we chose 64 trees (_informed by How Many Trees in a Random Forest? Authors
-Thais Mayumi Oshiro,Pedro Santoro Perez,José Augusto Baranauskas_), and tuned the mtry, the number of variables randomly sampled in each tree, which produced a bestTune mtry metric of 11. The higher mtry reduces the correlation between trees in the forest, thus improving prediction accuracy, but the tuning process and the *slower time to fit* associated with random Forest make this segment the longest to run of the three models we fit.  Although mtry values of 1-14 were tested, we have abbreviated the code to 9-12 in this model to minimize run time.
+Thais Mayumi Oshiro,Pedro Santoro Perez,José Augusto Baranauskas_), and tuned the mtry, the number of variables randomly sampled in each tree, which produced a bestTune
+mtry metric of 11. The higher mtry reduces the correlation between trees in the forest, thus improving prediction accuracy, but the tuning process and the
+*slower time to fit* associated with random Forest make this segment the longest to run of the three models we fit.  Although mtry values of 1-14 were tested, we have
+abbreviated the code to 9-12 in this model to minimize run time.
 
 ```{r rf, warning=F, message= F}
 set.seed(14,sample.kind = "Rounding")
@@ -525,32 +551,42 @@ rmse_result <- bind_rows(rmse_result,
                                     RMSEtrain = rmse_train_rf, 
                           RMSEtest = rmse_rf))
 rmse_result %>% knitr::kable()
-
 ```
 
 The random Forest model generated an RMSE of .450 on the training set, and .452 on the test set.
 
-Reviewing the variable importance, we note that gross square footage of the property (*GRSS_SF*) was a variable present in all of the decision trees in the ensemble, which is interesting considering that it was not, as discussed earlier, the variable with the highest correlation to SALE LOG. Rounding out the top 5 variables, in order of importance: BOROUGH.1 (Manhattan), BLDG_CL_CATEGORY13.CONDOS...ELEVATOR.APARTMENTS, SUM_UNIT, and BLDG_CL_SOLDD4.
+Reviewing the variable importance, we note that gross square footage of the property (*GRSS_SF*) was a variable present in all of the decision trees in the ensemble, which
+is interesting considering that it was not, as discussed earlier, the variable with the highest correlation to SALE LOG. Rounding out the top 5 variables, in order of
+importance: BOROUGH.1 (Manhattan), BLDG_CL_CATEGORY13.CONDOS...ELEVATOR.APARTMENTS, SUM_UNIT, and BLDG_CL_SOLDD4.
 
 ### **Final Model and Results**
 
 #### **Final Model - **
 
-The machine learning model trained that resulted in the *lowest RMSE of .452* was the randomForest algorithm with mtry=11 as noted above.  Of the 24 predictors that were used in the model, only the top 8 were included in more than 10% of the trees in the ensemble, and as noted above, gross square footage (**GRSS_SF**) was present in each of the models.
+The machine learning model trained that resulted in the *lowest RMSE of .452* was the randomForest algorithm with mtry=11 as noted above.  Of the 24 predictors that were
+used in the model, only the top 8 were included in more than 10% of the trees in the ensemble, and as noted above, gross square footage (**GRSS_SF**) was present in each of
+the models.
 
 ### **Conclusion**
 
-The RMSE results of all three models fit ranged from .475 to .452, supporting our original premise that we could build a machine learning algorithm that could predict Sale Price with relative accuracy based on an evaluation of other variables in the dataset such as Borough, Square Footage, Building Class, and Building Class Category.  The random Forest algorithm specifically should be the one for future application given the RMSE results.
+The RMSE results of all three models fit ranged from .475 to .452, supporting our original premise that we could build a machine learning algorithm that could predict Sale
+Price with relative accuracy based on an evaluation of other variables in the dataset such as Borough, Square Footage, Building Class, and Building Class Category.  The
+random Forest algorithm specifically should be the one for future application given the RMSE results.
 
-These models should now be used to evaluate future 12 month period of New York City Property Sales. While it would be my assumption that there may be macro level trends that alter the effectiveness of this model for future periods, it would be useful to understand whether the key predictors of this dataset remain the key predictors of future time periods, even if the degree of correlation varies.  Conceivably, this model, after evaluation of additional years of data, could be a key tool for real estate developers to use in predicting the return on investment over time on new property development.
+These models should now be used to evaluate future 12 month period of New York City Property Sales. While it would be my assumption that there may be macro level trends
+that alter the effectiveness of this model for future periods, it would be useful to understand whether the key predictors of this dataset remain the key predictors of
+future time periods, even if the degree of correlation varies.  Conceivably, this model, after evaluation of additional years of data, could be a key tool for real estate
+developers to use in predicting the return on investment over time on new property development.
 
 ##### **Limitations of the model, next steps**
 
 ### Limitations of the model
 
-The RMSE results here are tied to this model's fit to the specific subset of data that was partitioned in this process into the **train** set(training set) and **test** set (test set), and might not be replicated as favorably should the same model be used on future data partitions of the same **nyc** dataset.
+The RMSE results here are tied to this model's fit to the specific subset of data that was partitioned in this process into the **train** set(training set) and **test** set
+(test set), and might not be replicated as favorably should the same model be used on future data partitions of the same **nyc** dataset.
 
-Other limitations of the model are that it is trained on a relatively small set of 24 variables, and that the period of data is only 12 months.  It serves well on this dataset in isolation.  Additionally, as is true of any model, the quality of the model is contingent on the consistency and accuracy of the data therein.
+Other limitations of the model are that it is trained on a relatively small set of 24 variables, and that the period of data is only 12 months.  It serves well on this dataset
+in isolation.  Additionally, as is true of any model, the quality of the model is contingent on the consistency and accuracy of the data therein.
 
 ### Future Work
 
@@ -558,9 +594,12 @@ Interesting future work on this dataset could include:
 
 * revising the data partitioning to allow for k fold cross validation (60% training, 20% cross validation, 20% testing hold out)
 
-* putting the original dataset without log transformation or standardization through the model fitting process to understand the benefit of that original process in either processing time or RMSE output
+* putting the original dataset without log transformation or standardization through the model fitting process to understand the benefit of that original process in either
+processing time or RMSE output
 
 * constructing an ensemble of these machine learning algorithms
 
-* converting the dataset to a matrix focused on the combination of borough, block, and lot(commonly called a BBL), which forms a unique key for property in New York City. Block and Lot were removed from the original dataset due to low direct correlation with Sale Price, but building a separate model against BBL could include stratification by groupings of block number, and
-would be another intriguing analysis on this same dataset
+* converting the dataset to a matrix focused on the combination of borough, block, and lot(commonly called a BBL), which forms a unique key for property in New York City.
+Block and Lot were removed from the original dataset due to low direct correlation with Sale Price, but building a separate model against BBL could include stratification
+by groupings of block number, and would be another intriguing analysis on this
+same dataset
